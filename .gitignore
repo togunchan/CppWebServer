@@ -1,0 +1,22 @@
+# Executable binary
+server
+
+# Build artifacts
+*.o
+*.obj
+*.out
+
+# CMake or Make build dirs
+build/
+bin/
+
+# Editor settings
+.vscode/
+.idea/
+
+# macOS metadata
+.DS_Store
+
+# Temporary files
+*~
+*.tmp
