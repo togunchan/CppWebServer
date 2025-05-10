@@ -33,27 +33,10 @@ void startListening(int fd)
         perror("listen");
         exit(EXIT_FAILURE);
     }
-    std::cout << "Server listening on port 8080" << std::endl;
+    std::cout << "Server listening on port" << PORT << std::endl;
 }
 
-int waitForClient(int server_fd)
-{
-    int client_fd = accept(server_fd, nullptr, nullptr);
-    if (client_fd >= 0)
-    {
-        // const char *msg = "Hello World\n";
-        // send(client_fd, msg, strlen(msg), 0);
-        //  close(client_fd);
-        std::cout << "New client connected: fd= " << client_fd << "\n";
-    }
-    else
-    {
-        perror("accept");
-        exit(EXIT_FAILURE);
-    }
-    return client_fd;
-}
-
+// Sends a minimal HTTP/1.1 response.
 void sendResponse(int fd, const std::string &body)
 {
     std::cout << "I am in sendResponse function. fd is " << fd << std::endl;
@@ -83,13 +66,67 @@ void sendResponse(int fd, const std::string &body)
     }
 }
 
+// Waits for a client to connect, then echoes back any data received.
+// Returns the client socket FD. Exits on accept() failure.
+int waitForClient(int server_fd)
+{
+    int client_fd = accept(server_fd, nullptr, nullptr);
+    if (client_fd >= 0)
+    {
+        // const char *msg = "Hello World\n";
+        // send(client_fd, msg, strlen(msg), 0);
+        //  close(client_fd);
+        std::cout << "New client connected: fd= " << client_fd << "\n";
+    }
+    else
+    {
+        perror("accept");
+        exit(EXIT_FAILURE);
+    }
+    // sendResponse(client_fd, "Hello from C++ HTTP Server\n");
+
+    // Echo loop: read data from client and send it back
+    constexpr size_t BUFFER_SIZE = 1024;
+    char buffer[BUFFER_SIZE];
+    while (true)
+    {
+        // Zero out the buffer before reading
+        std::memset(buffer, 0, BUFFER_SIZE);
+        ssize_t bytes_read = read(client_fd, buffer, BUFFER_SIZE - 1);
+        if (bytes_read < 0)
+        {
+            perror("read");
+            break;
+        }
+        else if (bytes_read == 0)
+        {
+            std::cout << "Client fd= " << client_fd << "disconnected\n";
+            break;
+        }
+
+        // Send back exactly what we receive
+        size_t total_sent = 0;
+        while (total_sent < bytes_read)
+        {
+            ssize_t sent = write(client_fd, buffer + total_sent, bytes_read - total_sent);
+            if (sent < 0)
+            {
+                perror("write");
+                break;
+            }
+            total_sent += sent;
+        }
+    }
+    close(client_fd);
+    return client_fd;
+}
+
 int main()
 {
     int server_fd = createTcpSocket();
     bindSocket(server_fd, PORT);
     startListening(server_fd);
     int client_fd = waitForClient(server_fd);
-    sendResponse(client_fd, "Hello from C++ HTTP Server\n");
     close(server_fd);
 
     return 0;

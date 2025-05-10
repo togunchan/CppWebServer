@@ -9,6 +9,7 @@
 #include <netinet/in.h> // for sockaddr_in, INADDR_ANY, htons
 #include <arpa/inet.h>  // for htonl, ntohl (if needed)
 #include <unistd.h>     // for close()
+#include <cstring>      // for std::memset
 
 // Maximum number of pending connections
 constexpr int BACKLOG = 10;
