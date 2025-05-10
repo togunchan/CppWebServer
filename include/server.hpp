@@ -10,10 +10,22 @@
 #include <arpa/inet.h>  // for htonl, ntohl (if needed)
 #include <unistd.h>     // for close()
 #include <cstring>      // for std::memset
+#include <map>          // for std::map
+#include <string>       // for std::string
+#include <sstream>      // for std::istringstream
 
-// Maximum number of pending connections
-constexpr int BACKLOG = 10;
+constexpr int BACKLOG = 10; // Maximum number of pending connections
 constexpr uint16_t PORT = 8080;
+constexpr size_t MAX_REQ_SIZE = 8192;
+
+// A basic HTTP request
+struct HttpRequest
+{
+    std::string method;
+    std::string path;
+    std::string version;
+    std::map<std::string, std::string> headers;
+};
 
 // Creates an IPv4 TCP socket, exits on failure
 int createTcpSocket();
@@ -30,5 +42,14 @@ int waitForClient(int server_fd);
 // Sends a minimal HTTP/1.1 response.
 // 'fd' is the client socket file descriptor, 'body' is the response content.
 void sendResponse(int fd, const std::string &body);
+
+// When the headers end, two consecutive "\r\n" sequences appear, forming an empty line. This marks the end of the headers.
+// The code continues reading from the socket until this double blank line ("\r\n\r\n") is encountered, ensuring all headers (request line and header lines) are read.
+HttpRequest receiveRequest(int fd);
+
+void sendResponse(int fd, const std::string &body, const std::string &contentType = "text/plain");
+
+// Echo loop: read data from client and send it back
+void echoLoop(int client_fd);
 
 #endif // SERVER_HPP
