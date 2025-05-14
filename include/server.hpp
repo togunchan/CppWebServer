@@ -12,7 +12,6 @@
 #include <cstring>      // for std::memset
 #include <map>          // for std::map
 #include <string>       // for std::string
-#include <sstream>      // for std::istringstream
 
 constexpr int BACKLOG = 10; // Maximum number of pending connections
 constexpr uint16_t PORT = 8080;
@@ -36,6 +35,8 @@ void bindSocket(int fd, uint16_t port);
 // Starts listening on socket FD with backlog = BACKLOG, exits on failure
 void startListening(int fd);
 
+// Waits for a client to connect, then echoes back any data received.
+// Returns the client socket FD. Exits on accept() failure.
 // Blocks until a client connects; returns the new connection's FD
 int waitForClient(int server_fd);
 
@@ -51,5 +52,11 @@ void sendResponse(int fd, const std::string &body, const std::string &contentTyp
 
 // Echo loop: read data from client and send it back
 void echoLoop(int client_fd);
+
+// Determine the Content-Type header value based on the file extension in `path`.
+// Searches for the last '.' in the filename, converts the extension to lowercase,
+// and returns a matching MIME type (e.g., ".html" → "text/html", ".css" → "text/css").
+// If no known extension is found, defaults to "application/octet-stream".
+std::string getMimeType(const std::string &path);
 
 #endif // SERVER_HPP

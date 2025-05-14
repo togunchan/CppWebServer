@@ -1,4 +1,6 @@
 #include "../include/server.hpp"
+#include <sstream>       // for std::istringstream
+#include <unordered_map> // for std::unordered_map
 
 int createTcpSocket()
 {
@@ -72,8 +74,6 @@ void echoLoop(int client_fd)
     }
 }
 
-// Waits for a client to connect, then echoes back any data received.
-// Returns the client socket FD. Exits on accept() failure.
 int waitForClient(int server_fd)
 {
     int client_fd = accept(server_fd, nullptr, nullptr);
@@ -162,7 +162,6 @@ HttpRequest receiveRequest(int fd)
     return req;
 }
 
-// Sends a minimal HTTP/1.1 response.
 void sendResponse(int fd, const std::string &body, const std::string &contentType)
 {
     // Build status line and headers dynamically
@@ -190,21 +189,69 @@ void sendResponse(int fd, const std::string &body, const std::string &contentTyp
     }
 }
 
+std::string getMimeType(const std::string &path)
+{
+    // Find last dot in filename
+    size_t pos = path.rfind('.');
+    if (pos == std::string::npos)
+        return "application/octet-stream";
+
+    // find extention
+    std::string ext = path.substr(pos + 1);
+    // make lower case
+    std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+
+    // static so that the lookup table is constructed only once and shared across calls
+    static const std::unordered_map<std::string, std::string> mimeTypes = {
+        {"html", "text/html"},
+        {"htm", "text/html"},
+        {"css", "text/css"},
+        {"js", "application/javascript"},
+        {"json", "application/json"},
+        {"txt", "text/plain"},
+        {"png", "image/png"},
+        {"jpg", "image/jpeg"},
+        {"jpeg", "image/jpeg"},
+        {"gif", "image/gif"},
+        {"ico", "image/x-icon"},
+        {"svg", "image/svg+xml"},
+        {"pdf", "application/pdf"},
+        {"doc", "application/msword"}};
+
+    std::unordered_map<std::string, std::string>::const_iterator it = mimeTypes.find(ext);
+    // if type not found
+    if (it == mimeTypes.end())
+        return "application/octet-stream";
+    return it->second;
+}
+
 int main()
 {
-    int server_fd = createTcpSocket();
-    bindSocket(server_fd, PORT);
-    startListening(server_fd);
-    int client_fd = waitForClient(server_fd);
+    /*     int server_fd = createTcpSocket();
+        bindSocket(server_fd, PORT);
+        startListening(server_fd);
+        int client_fd = waitForClient(server_fd);
 
-    // curl -i http://localhost:8080/foo
-    HttpRequest req = receiveRequest(client_fd);
-    std::cout << "Method: " << req.method << std::endl;
-    std::cout << "Path: " << req.path << std::endl;
-    std::cout << "Version: " << req.version << std::endl;
+        // curl -i http://localhost:8080/foo
+        HttpRequest req = receiveRequest(client_fd);
+        std::cout << "Method: " << req.method << std::endl;
+        std::cout << "Path: " << req.path << std::endl;
+        std::cout << "Version: " << req.version << std::endl;
 
-    close(client_fd);
-    close(server_fd);
+        // Headers
+        for (const auto &[name, value] : req.headers)
+        {
+            std::cout << name << ": " << value << std::endl;
+        }
+
+        close(client_fd);
+        close(server_fd); */
+
+    std::vector<std::string> tests = {"/index.html", "/style.CSS", "/app.js", "/img/logo.png", "/foo"};
+    for (auto &p : tests)
+    {
+        std::cout << p << " -> " << getMimeType(p) << std::endl;
+    }
 
     return 0;
 }
