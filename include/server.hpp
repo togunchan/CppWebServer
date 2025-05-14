@@ -40,14 +40,14 @@ void startListening(int fd);
 // Blocks until a client connects; returns the new connection's FD
 int waitForClient(int server_fd);
 
-// Sends a minimal HTTP/1.1 response.
-// 'fd' is the client socket file descriptor, 'body' is the response content.
-void sendResponse(int fd, const std::string &body);
-
 // When the headers end, two consecutive "\r\n" sequences appear, forming an empty line. This marks the end of the headers.
 // The code continues reading from the socket until this double blank line ("\r\n\r\n") is encountered, ensuring all headers (request line and header lines) are read.
 HttpRequest receiveRequest(int fd);
 
+// Sends a complete HTTP/1.1 response over the socket:
+// - Builds the status line (200 OK) and required headers (Content-Type, Content-Length, Connection).
+// - Appends the message body.
+// - Writes the full response to 'fd', looping until all bytes are sent.
 void sendResponse(int fd, const std::string &body, const std::string &contentType = "text/plain");
 
 // Echo loop: read data from client and send it back
@@ -58,5 +58,12 @@ void echoLoop(int client_fd);
 // and returns a matching MIME type (e.g., ".html" → "text/html", ".css" → "text/css").
 // If no known extension is found, defaults to "application/octet-stream".
 std::string getMimeType(const std::string &path);
+
+// Serves a static file over HTTP:
+// - Constructs the full file path using the document root and request path.
+// - If the path is “/”, defaults to serving "index.html".
+// - Attempts to open the file in binary mode; on failure sends a 404 response.
+// - Reads the entire file into memory, determines its MIME type, and sends it.
+void serveStaticFile(int fd, const std::string &path, const std::string &docRoot);
 
 #endif // SERVER_HPP

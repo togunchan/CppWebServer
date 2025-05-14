@@ -1,6 +1,7 @@
 #include "../include/server.hpp"
 #include <sstream>       // for std::istringstream
 #include <unordered_map> // for std::unordered_map
+#include <fstream>       // for std::ifstream
 
 int createTcpSocket()
 {
@@ -225,33 +226,55 @@ std::string getMimeType(const std::string &path)
     return it->second;
 }
 
+void serveStaticFile(int fd, const std::string &path, const std::string &docRoot)
+{
+    std::string fullPath = docRoot + path;
+    if (path == "/")
+        fullPath += "index.html";
+
+    // input file stream
+    // In text mode, some systems translate end-of-line sequences ("\r\n" <-> "\n");
+    // in binary mode, no such translations occur and bytes are read exactly as-is.
+    std::ifstream file(fullPath, std::ios::binary);
+    if (!file)
+    {
+        sendResponse(fd, "404 Not Found", "text/plain");
+        return;
+    }
+
+    // Read entire file into a string using input stream buffer iterators
+    std::string content(
+        (std::istreambuf_iterator<char>(file)), // iterator positioned at start of file stream
+        std::istreambuf_iterator<char>()        // end-of-stream iterator indicating EOF(end of file)
+    );
+
+    std::string mime = getMimeType(fullPath);
+    sendResponse(fd, content, mime);
+}
+
 int main()
 {
-    /*     int server_fd = createTcpSocket();
-        bindSocket(server_fd, PORT);
-        startListening(server_fd);
-        int client_fd = waitForClient(server_fd);
+    int server_fd = createTcpSocket();
+    bindSocket(server_fd, PORT);
+    startListening(server_fd);
+    int client_fd = waitForClient(server_fd);
 
-        // curl -i http://localhost:8080/foo
-        HttpRequest req = receiveRequest(client_fd);
-        std::cout << "Method: " << req.method << std::endl;
-        std::cout << "Path: " << req.path << std::endl;
-        std::cout << "Version: " << req.version << std::endl;
+    // curl -i http://localhost:8080/foo
+    HttpRequest req = receiveRequest(client_fd);
+    std::cout << "Method: " << req.method << std::endl;
+    std::cout << "Path: " << req.path << std::endl;
+    std::cout << "Version: " << req.version << std::endl;
 
-        // Headers
-        for (const auto &[name, value] : req.headers)
-        {
-            std::cout << name << ": " << value << std::endl;
-        }
+    serveStaticFile(client_fd, req.path, "./public/");
 
-        close(client_fd);
-        close(server_fd); */
-
-    std::vector<std::string> tests = {"/index.html", "/style.CSS", "/app.js", "/img/logo.png", "/foo"};
-    for (auto &p : tests)
+    // Headers
+    for (const auto &[name, value] : req.headers)
     {
-        std::cout << p << " -> " << getMimeType(p) << std::endl;
+        std::cout << name << ": " << value << std::endl;
     }
+
+    close(client_fd);
+    close(server_fd);
 
     return 0;
 }
