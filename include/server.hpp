@@ -26,44 +26,93 @@ struct HttpRequest
     std::map<std::string, std::string> headers;
 };
 
-// Creates an IPv4 TCP socket, exits on failure
+/*
+ * Creates an IPv4 TCP socket.
+ * Exits on failure.
+ */
 int createTcpSocket();
 
-// Binds given socket FD to the specified port, exits on failure
+/*
+ * Binds the given socket FD to the specified port.
+ * Exits on failure.
+ */
 void bindSocket(int fd, uint16_t port);
 
-// Starts listening on socket FD with backlog = BACKLOG, exits on failure
+/*
+ * Starts listening on the socket FD with backlog = BACKLOG.
+ * Exits on failure.
+ */
 void startListening(int fd);
 
-// Waits for a client to connect, then echoes back any data received.
-// Returns the client socket FD. Exits on accept() failure.
-// Blocks until a client connects; returns the new connection's FD
+/*
+ * Waits for a client to connect (blocks until a connection arrives).
+ * Returns the client socket FD.
+ * Exits on accept() failure.
+ */
 int waitForClient(int server_fd);
 
-// When the headers end, two consecutive "\r\n" sequences appear, forming an empty line. This marks the end of the headers.
-// The code continues reading from the socket until this double blank line ("\r\n\r\n") is encountered, ensuring all headers (request line and header lines) are read.
+/*
+ * When the headers end, two consecutive "\r\n" sequences appear, forming an empty line. This marks the end of the headers.
+ * The code continues reading from the socket until this double blank line ("\r\n\r\n") is encountered, ensuring all headers (request line and header lines) are read.
+ */
 HttpRequest receiveRequest(int fd);
 
-// Sends a complete HTTP/1.1 response over the socket:
-// - Builds the status line (200 OK) and required headers (Content-Type, Content-Length, Connection).
-// - Appends the message body.
-// - Writes the full response to 'fd', looping until all bytes are sent.
+/*
+ * Sends a complete HTTP/1.1 response over the socket FD:
+ *  - Builds the status line ("HTTP/1.1 200 OK") and headers:
+ *      Content-Type, Content-Length, Connection: close
+ *  - Appends the message body.
+ *  - Writes the full response, looping until all bytes are sent.
+ */
 void sendResponse(int fd, const std::string &body, const std::string &contentType = "text/plain");
 
-// Echo loop: read data from client and send it back
+/*
+ * Reads data from the client socket in a loop and echoes it back.
+ */
 void echoLoop(int client_fd);
 
-// Determine the Content-Type header value based on the file extension in `path`.
-// Searches for the last '.' in the filename, converts the extension to lowercase,
-// and returns a matching MIME type (e.g., ".html" → "text/html", ".css" → "text/css").
-// If no known extension is found, defaults to "application/octet-stream".
+/*
+ * Determines the Content-Type header value based on the file extension in `path`.
+ *  - Finds the last '.' in the filename.
+ *  - Converts the extension to lowercase.
+ *  - Looks up and returns a matching MIME type (e.g., "html" → "text/html").
+ *  - Defaults to "application/octet-stream" if the extension is unknown.
+ */
 std::string getMimeType(const std::string &path);
 
-// Serves a static file over HTTP:
-// - Constructs the full file path using the document root and request path.
-// - If the path is “/”, defaults to serving "index.html".
-// - Attempts to open the file in binary mode; on failure sends a 404 response.
-// - Reads the entire file into memory, determines its MIME type, and sends it.
+/*
+ * Serves a static file over HTTP:
+ *  - Constructs the full file path using the document root and request path.
+ *  - If the path is "/", defaults to serving "index.html".
+ *  - Opens the file in binary mode; on failure sends a 404 response.
+ *  - Reads the entire file into memory, determines its MIME type,
+ *    and sends it using sendResponse().
+ */
 void serveStaticFile(int fd, const std::string &path, const std::string &docRoot);
+
+/*
+ * Thread-safe logging function.
+ * Uses a mutex to ensure only one thread at a time writes to std::cout,
+ * preventing interleaved or garbled output.
+ */
+void log(const std::string &message);
+
+/*
+ * Handles a single client connection.
+ * Intended to run in its own detached thread.
+ *  1. Reads and parses the incoming HTTP request via receiveRequest().
+ *  2. Logs the request line and headers.
+ *  3. Serves the requested static file or sends an error response.
+ *  4. Closes the client socket when finished.
+ */
+void handleClient(int client_fd);
+
+/*
+ * Spawn a detached thread to handle a client connection.
+ *
+ * Creates a new std::thread that runs handleClient on the given socket
+ * and detaches it so the main loop can immediately continue accepting new clients.
+ */
+void spawnClientThread(int client_fd);
 
 #endif // SERVER_HPP

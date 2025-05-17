@@ -2,6 +2,9 @@
 #include <sstream>       // for std::istringstream
 #include <unordered_map> // for std::unordered_map
 #include <fstream>       // for std::ifstream
+#include <thread>        // for std::thread
+
+std::mutex logMutex;
 
 int createTcpSocket()
 {
@@ -36,7 +39,7 @@ void startListening(int fd)
         perror("listen");
         exit(EXIT_FAILURE);
     }
-    std::cout << "Server listening on port" << PORT << std::endl;
+    log("Server listening on port " + std::to_string(PORT) + "\n");
 }
 
 void echoLoop(int client_fd)
@@ -228,7 +231,9 @@ std::string getMimeType(const std::string &path)
 
 void serveStaticFile(int fd, const std::string &path, const std::string &docRoot)
 {
+
     std::string fullPath = docRoot + path;
+    log("Serving file: " + fullPath);
     if (path == "/")
         fullPath += "index.html";
 
@@ -252,29 +257,57 @@ void serveStaticFile(int fd, const std::string &path, const std::string &docRoot
     sendResponse(fd, content, mime);
 }
 
+void log(const std::string &message)
+{
+    std::lock_guard<std::mutex> lock(logMutex);
+    std::cout << message << "\n"
+              << std::endl;
+}
+
+void handleClient(int client_fd)
+{
+    // curl -i http://localhost:8080/foo
+    HttpRequest req = receiveRequest(client_fd);
+    log("Method: " + req.method);
+    log("Path: " + req.path);
+    log("Version: " + req.version);
+    for (const auto &[name, value] : req.headers)
+    {
+        log(name + ": " + value);
+    }
+    serveStaticFile(client_fd, req.path, "./public");
+
+    close(client_fd);
+}
+
+void spawnClientThread(int client_fd)
+{
+    // Spawn a new thread to handle the client connection
+    // - This line creates a new std::thread object.
+    // - The thread entry function is handleClient, with client_fd as its argument.
+    // - The newly created thread immediately begins executing handleClient(client_fd) on its own stack.
+    std::thread t(handleClient, client_fd);
+
+    // Detach the thread from the main thread
+    // - Calling detach() makes this new thread independent of the main thread.
+    // - The main thread does not wait for it to finish and immediately continues to the next accept().
+    // - The detached thread cleans up its own resources once its work (reading request, serving file, closing socket) is done.
+    t.detach();
+}
+
 int main()
 {
     int server_fd = createTcpSocket();
     bindSocket(server_fd, PORT);
     startListening(server_fd);
-    int client_fd = waitForClient(server_fd);
 
-    // curl -i http://localhost:8080/foo
-    HttpRequest req = receiveRequest(client_fd);
-    std::cout << "Method: " << req.method << std::endl;
-    std::cout << "Path: " << req.path << std::endl;
-    std::cout << "Version: " << req.version << std::endl;
-
-    serveStaticFile(client_fd, req.path, "./public/");
-
-    // Headers
-    for (const auto &[name, value] : req.headers)
+    while (true)
     {
-        std::cout << name << ": " << value << std::endl;
+        // Wait for a new client connection
+        int client_fd = waitForClient(server_fd);
+        spawnClientThread(client_fd);
     }
 
-    close(client_fd);
     close(server_fd);
-
     return 0;
 }
