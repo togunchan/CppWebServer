@@ -1,20 +1,25 @@
-# Executable binary
-server
+# CMake build artifacts
+/CMakeFiles/
+/CMakeCache.txt
+/cmake_install.cmake
+/Makefile
+/compile_commands.json
 
-# Build artifacts
+# Ignore build output directories
+/build/
+/bin/
+
+# Ignore compiled executables and object files
+server
 *.o
 *.obj
 *.out
 
-# CMake or Make build dirs
-build/
-bin/
-
-# Editor settings
+# Editor/IDE settings
 .vscode/
 .idea/
 
-# macOS metadata
+# macOS system files
 .DS_Store
 
 # Temporary files
