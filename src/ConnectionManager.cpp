@@ -16,7 +16,7 @@ void handleClient(int client_fd)
     {
         log(name + ": " + value);
     }
-    serveStaticFile(client_fd, req.path, "./public");
+    serveStaticFile(client_fd, req.path, "../public");
 
     close(client_fd);
 }

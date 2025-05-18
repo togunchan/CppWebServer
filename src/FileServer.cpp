@@ -46,7 +46,6 @@ std::string getMimeType(const std::string &path)
 
 void serveStaticFile(int fd, const std::string &path, const std::string &docRoot)
 {
-
     std::string fullPath = docRoot + path;
     log("Serving file: " + fullPath);
     if (path == "/")
@@ -58,7 +57,8 @@ void serveStaticFile(int fd, const std::string &path, const std::string &docRoot
     std::ifstream file(fullPath, std::ios::binary);
     if (!file)
     {
-        sendResponse(fd, "404 Not Found", "text/plain");
+        sendResponse(fd, "404 Not Found\n", "text/plain");
+        log("fullPath is " + fullPath);
         return;
     }
 
