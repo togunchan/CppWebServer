@@ -89,6 +89,9 @@ Config Config::load(const std::string &path)
     config.port = extractInt(json, "port", 8080);
     if (config.port <= 0 || config.port > 65535)
         throw SocketException("Invalid port number: " + std::to_string(config.port));
+    config.sslPort = extractInt(json, "sslPort", 0);
+    if (config.sslPort < 0 || config.sslPort > 65535)
+        throw SocketException("Invalid SSL port number: " + std::to_string(config.sslPort));
     config.docRoot = extractString(json, "docRoot");
     if (config.docRoot.empty())
         throw FileException("docRoot is empty");

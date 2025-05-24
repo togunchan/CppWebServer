@@ -1,6 +1,9 @@
 #ifndef CONNECTIONMANAGER_HPP
 #define CONNECTIONMANAGER_HPP
 
+#include <openssl/ssl.h>
+#include <openssl/err.h>
+
 /*
  * Handles a single client connection.
  * Intended to run in its own detached thread.
@@ -11,6 +14,8 @@
  */
 void handleClient(int client_fd);
 
+void handleClient(int *ssl);
+
 /*
  * Spawn a detached thread to handle a client connection.
  *
@@ -19,4 +24,5 @@ void handleClient(int client_fd);
  */
 void spawnClientThread(int client_fd);
 
+void spawnClientThread(int client_fd, SSL_CTX *sslCtx);
 #endif // CONNECTIONMANAGER_HPP

@@ -6,6 +6,7 @@
 struct Config
 {
     int port;
+    int sslPort;
     std::string docRoot;
     int maxThreads;
 

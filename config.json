@@ -1,5 +1,6 @@
 {
   "port": 8080,
+  "sslPort": 8443,
   "docRoot": "./public/",
   "maxThreads": 4
 }

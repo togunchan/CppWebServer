@@ -3,6 +3,7 @@
 
 #include <map>    // for std::map
 #include <string> // for std::string
+#include <openssl/ssl.h>
 
 constexpr size_t MAX_REQ_SIZE = 8192;
 
@@ -21,4 +22,5 @@ struct HttpRequest
  */
 HttpRequest receiveRequest(int fd);
 
+HttpRequest receiveRequest(SSL *ssl);
 #endif // HTTPPARSER_HPP

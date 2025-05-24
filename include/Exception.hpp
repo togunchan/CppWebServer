@@ -45,5 +45,12 @@ class FileParseException : public ServerException
 {
 public:
     explicit FileParseException(const std::string &msg)
-        : ServerException("File Parse Rrror: " + msg) {}
+        : ServerException("File Parse Error: " + msg) {}
+};
+
+class SSLException : public ServerException
+{
+public:
+    explicit SSLException(const std::string &msg)
+        : ServerException("SSL Error: " + msg) {}
 };

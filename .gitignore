@@ -24,4 +24,7 @@ server
 
 # Temporary files
 *~
-*.tmp
+*.tmpserver.crt
+server.crt
+server.key
+

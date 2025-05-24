@@ -28,7 +28,18 @@ add_library(Config STATIC
     Config.cpp
 )
 
-# 7. Create the main executable
+# 7. Compile the SSLManager module as a library
+add_library(SSLManager STATIC
+    SSLManager.cpp
+)
+
+target_link_libraries(SSLManager
+    PUBLIC
+        OpenSSL::SSL
+        OpenSSL::Crypto
+)
+
+# 8. Create the main executable
 add_executable(CppWebServer
     main.cpp
 )
@@ -42,5 +53,6 @@ target_link_libraries(CppWebServer
         Logger
         ConnectionManager
         Config
+        SSLManager
         pthread      # Required for std::thread
 )

@@ -2,6 +2,7 @@
 #define FILESERVER_HPP
 
 #include <string>
+#include <openssl/ssl.h>
 
 /*
  * Determines the Content-Type header value based on the file extension in `path`.
@@ -22,6 +23,8 @@ std::string getMimeType(const std::string &path);
  */
 void serveStaticFile(int fd, const std::string &path, const std::string &docRoot);
 
+void serveStaticFile(SSL *ssl, const std::string &path, const std::string &docRoot);
+
 /*
  * Sends a complete HTTP/1.1 response over the socket FD:
  *  - Builds the status line ("HTTP/1.1 200 OK") and headers:
@@ -30,5 +33,7 @@ void serveStaticFile(int fd, const std::string &path, const std::string &docRoot
  *  - Writes the full response, looping until all bytes are sent.
  */
 void sendResponse(int fd, const std::string &body, const std::string &contentType = "text/plain");
+
+void sendResponse(SSL *ssl, const std::string &body, const std::string &contentType);
 
 #endif // FILESERVER_HPP
