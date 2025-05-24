@@ -4,7 +4,7 @@
 #include <cstdint> // for uint16_t
 
 constexpr int BACKLOG = 10; // Maximum number of pending connections
-constexpr uint16_t PORT = 8080;
+// constexpr uint16_t PORT = 8080;
 
 /*
  * Creates an IPv4 TCP socket.
@@ -22,7 +22,7 @@ void bindSocket(int fd, uint16_t port);
  * Starts listening on the socket FD with backlog = BACKLOG.
  * Exits on failure.
  */
-void startListening(int fd);
+void startListening(int fd, int port);
 
 /*
  * Waits for a client to connect (blocks until a connection arrives).

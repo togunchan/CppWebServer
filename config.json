@@ -1,0 +1,5 @@
+{
+  "port": 8080,
+  "docRoot": "./public/",
+  "maxThreads": 4
+}

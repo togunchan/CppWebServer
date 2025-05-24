@@ -9,6 +9,9 @@
 #include <string>       // for std::string
 #include <iostream>     // for std::cout
 #include <unistd.h>
+#include "../include/Config.hpp"
+
+Config cfg;
 
 int createTcpSocket()
 {
@@ -22,7 +25,7 @@ int createTcpSocket()
     return server_fd;
 }
 
-void bindSocket(int fd, uint16_t port)
+void bindSocket(int fd, uint16_t port = cfg.port)
 {
     // bind to port 8080 on any interface
     sockaddr_in addr{}; // Declare and zero-initialize the IPv4 address structure
@@ -36,14 +39,14 @@ void bindSocket(int fd, uint16_t port)
     }
 }
 
-void startListening(int fd)
+void startListening(int fd, int port)
 {
     if (listen(fd, BACKLOG) < 0)
     {
         perror("listen");
         exit(EXIT_FAILURE);
     }
-    log("Server listening on port " + std::to_string(PORT) + "\n");
+    log("Server listening on port " + std::to_string(port) + "\n");
 }
 
 int waitForClient(int server_fd)

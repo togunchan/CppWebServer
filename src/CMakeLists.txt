@@ -23,12 +23,17 @@ add_library(ConnectionManager STATIC
     ConnectionManager.cpp
 )
 
-# 6. Create the main executable
+# 6. Compile the Config module as a library
+add_library(Config STATIC
+    Config.cpp
+)
+
+# 7. Create the main executable
 add_executable(CppWebServer
     main.cpp
 )
 
-# 7. Link the executable with the libraries
+# 8. Link the executable with the libraries
 target_link_libraries(CppWebServer
     PRIVATE
         SocketManager
@@ -36,5 +41,6 @@ target_link_libraries(CppWebServer
         FileServer
         Logger
         ConnectionManager
+        Config
         pthread      # Required for std::thread
 )
