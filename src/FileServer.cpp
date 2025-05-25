@@ -73,7 +73,7 @@ void serveStaticFile(int fd, const std::string &path, const std::string &docRoot
     sendResponse(fd, content, mime);
 }
 
-void serveStaticFile(SSL *ssl, const std::string &path, const std::string &docRoot)
+void serveStaticFileSSL(SSL *ssl, const std::string &path, const std::string &docRoot)
 {
     std::string fullPath = docRoot + path;
     log("Serving file: " + fullPath);
@@ -86,7 +86,7 @@ void serveStaticFile(SSL *ssl, const std::string &path, const std::string &docRo
     std::ifstream file(fullPath, std::ios::binary);
     if (!file)
     {
-        sendResponse(ssl, "404 Not Found\n", "text/plain");
+        sendResponseSSL(ssl, "404 Not Found\n", "text/plain");
         log("fullPath is " + fullPath);
         return;
     }
@@ -98,7 +98,7 @@ void serveStaticFile(SSL *ssl, const std::string &path, const std::string &docRo
     );
 
     std::string mime = getMimeType(fullPath);
-    sendResponse(ssl, content, mime);
+    sendResponseSSL(ssl, content, mime);
 }
 
 void sendResponse(int fd, const std::string &body, const std::string &contentType)
@@ -128,7 +128,7 @@ void sendResponse(int fd, const std::string &body, const std::string &contentTyp
     }
 }
 
-void sendResponse(SSL *ssl, const std::string &body, const std::string &contentType)
+void sendResponseSSL(SSL *ssl, const std::string &body, const std::string &contentType)
 {
     // Build status line and headers dynamically
     std::ostringstream resp;

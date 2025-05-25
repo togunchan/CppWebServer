@@ -36,3 +36,7 @@ target_include_directories(HttpParser PRIVATE ${OPENSSL_INCLUDE_DIR})
 target_include_directories(ConnectionManager PRIVATE ${OPENSSL_INCLUDE_DIR})
 target_include_directories(SSLManager PRIVATE ${OPENSSL_INCLUDE_DIR})
 target_include_directories(FileServer PRIVATE ${OPENSSL_INCLUDE_DIR})
+
+
+set(CMAKE_BUILD_TYPE Debug)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O0")

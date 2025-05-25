@@ -23,7 +23,7 @@ std::string getMimeType(const std::string &path);
  */
 void serveStaticFile(int fd, const std::string &path, const std::string &docRoot);
 
-void serveStaticFile(SSL *ssl, const std::string &path, const std::string &docRoot);
+void serveStaticFileSSL(SSL *ssl, const std::string &path, const std::string &docRoot);
 
 /*
  * Sends a complete HTTP/1.1 response over the socket FD:
@@ -34,7 +34,7 @@ void serveStaticFile(SSL *ssl, const std::string &path, const std::string &docRo
  */
 void sendResponse(int fd, const std::string &body, const std::string &contentType = "text/plain");
 
-void sendResponse(SSL *ssl, const std::string &body, const std::string &contentType);
+void sendResponseSSL(SSL *ssl, const std::string &body, const std::string &contentType);
 
 /*
  * Write the entire contents of `data` to the socket `fd`.

@@ -73,7 +73,7 @@ HttpRequest receiveRequest(int fd)
     return req;
 }
 
-HttpRequest receiveRequest(SSL *ssl)
+HttpRequest receiveRequestSSL(SSL *ssl)
 {
     // Reserve space to avoid frequent reallocations
     std::string raw;

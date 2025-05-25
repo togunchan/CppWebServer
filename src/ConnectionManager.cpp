@@ -5,7 +5,7 @@
 #include <thread>   // for std::thread
 #include <unistd.h> // for close()
 
-void handleClient(int client_fd, std::string docRoot)
+void handleClient(int client_fd, const std::string docRoot)
 {
     // curl -i http://localhost:8080/foo
     HttpRequest req = receiveRequest(client_fd);
@@ -54,12 +54,12 @@ void handleClient(int client_fd, std::string docRoot)
     close(client_fd);
 }
 
-void handleClient(SSL *ssl)
+void handleClientSSL(SSL *ssl, const std::string docRoot)
 {
     // Read HTTP request using SSL
     // curl -i https://localhost:8080/index.html --insecure
 
-    HttpRequest req = receiveRequest(ssl);
+    HttpRequest req = receiveRequestSSL(ssl);
     log("Method: " + req.method);
     log("Path: " + req.path);
     log("Version: " + req.version);
@@ -70,15 +70,16 @@ void handleClient(SSL *ssl)
     }
 
     // Serve static file using SSL
-    serveStaticFile(ssl, req.path, "../public");
+    serveStaticFileSSL(ssl, req.path, "../public");
 
-    // Close SSL connection properly
-    SSL_shutdown(ssl);
-    SSL_free(ssl);
+    // // Close SSL connection properly
+    // SSL_shutdown(ssl);
+    // SSL_free(ssl);
 }
 
-void spawnClientThread(int client_fd, std::string docRoot)
+void spawnClientThreadHTTP(int client_fd, const std::string &docRoot)
 {
+    log("I am in the spawnClientThreadHTTP for http");
     // Spawn a new thread to handle the client connection
     // - This line creates a new std::thread object.
     // - The thread entry function is handleClient, with client_fd as its argument.
@@ -93,9 +94,10 @@ void spawnClientThread(int client_fd, std::string docRoot)
     t.detach();
 }
 
-void spawnClientThread(int client_fd, SSL_CTX *sslCtx)
+void spawnClientThreadHTTPS(int client_fd, SSL_CTX *sslCtx, const std::string &docRoot)
 {
-    std::thread t([client_fd, sslCtx]()
+    log("I am in the spawnClientThreadHTTPS for https");
+    std::thread t([client_fd, sslCtx, docRoot]()
                   {
         SSL *ssl = SSL_new(sslCtx);
         SSL_set_fd(ssl, client_fd);
@@ -110,7 +112,7 @@ void spawnClientThread(int client_fd, SSL_CTX *sslCtx)
         }
         else
         {
-            handleClient(ssl);
+            handleClientSSL(ssl, docRoot);
         }
         SSL_shutdown(ssl);
         SSL_free(ssl);

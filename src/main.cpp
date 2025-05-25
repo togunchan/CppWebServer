@@ -5,10 +5,11 @@
 #include "../include/SSLManager.hpp"
 #include <unistd.h>
 #include <iostream>
+#include <thread>
+#include <stop_token>
 
 int main()
 {
-
     // HTTP
     Config cfg;
     try
@@ -34,15 +35,34 @@ int main()
     bindSocket(https_fd, cfg.sslPort);
     startListening(https_fd, cfg.sslPort);
 
-    while (true)
-    {
-        // Wait for a new client connection
-        int client_fd = waitForClient(http_fd);
-        spawnClientThread(client_fd, cfg.docRoot);
+    std::thread httpThread([http_fd, &cfg]()
+                           {
+            while (true)
+            {
+                log("I am in the http thread.");
+                // Wait for a new client connection
+                int client_fd = waitForClient(http_fd);
+                if(client_fd < 0) continue;
+                spawnClientThreadHTTP(client_fd, cfg.docRoot);
+            } });
 
-        int ssl_client_fd = waitForClient(https_fd);
-        spawnClientThread(ssl_client_fd, sslCtx);
-    }
+    std::thread httpsThread([https_fd, sslCtx, &cfg]()
+                            {
+            while (true)
+            {
+                log("I am in the https thread.");
+                int ssl_client_fd = waitForClient(https_fd);
+                if(ssl_client_fd < 0) continue;
+                spawnClientThreadHTTPS(ssl_client_fd, sslCtx, cfg.docRoot);
+            } });
+
+    if (httpThread.joinable())
+        httpThread.join();
+    if (httpsThread.joinable())
+        httpsThread.join();
+
+    std::cout << "Servers up. Press any button to exit...\n";
+    std::cin.get();
 
     SSL_CTX_free(sslCtx);
     close(http_fd);

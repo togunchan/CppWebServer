@@ -22,5 +22,5 @@ struct HttpRequest
  */
 HttpRequest receiveRequest(int fd);
 
-HttpRequest receiveRequest(SSL *ssl);
+HttpRequest receiveRequestSSL(SSL *ssl);
 #endif // HTTPPARSER_HPP

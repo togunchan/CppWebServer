@@ -52,6 +52,7 @@ void startListening(int fd, int port)
 
 int waitForClient(int server_fd)
 {
+    log("I am in the waitForClient function");
     int client_fd = accept(server_fd, nullptr, nullptr);
     if (client_fd >= 0)
     {
