@@ -9,7 +9,7 @@
 int main()
 {
 
-    SSL_CTX *sslCtx = createServerSSLContext("../server.crt", "../server.key");
+    // HTTP
     Config cfg;
     try
     {
@@ -24,20 +24,28 @@ int main()
         std::cerr << e.what() << '\n';
     }
 
-    int server_fd = createTcpSocket();
-    bindSocket(server_fd, cfg.sslPort);
-    startListening(server_fd, cfg.sslPort);
+    int http_fd = createTcpSocket();
+    bindSocket(http_fd, cfg.port);
+    startListening(http_fd, cfg.port);
+
+    // HTTPS
+    SSL_CTX *sslCtx = createServerSSLContext("../server.crt", "../server.key");
+    int https_fd = createTcpSocket();
+    bindSocket(https_fd, cfg.sslPort);
+    startListening(https_fd, cfg.sslPort);
 
     while (true)
     {
         // Wait for a new client connection
-        // int client_fd = waitForClient(server_fd);
-        // spawnClientThread(client_fd);
+        int client_fd = waitForClient(http_fd);
+        spawnClientThread(client_fd, cfg.docRoot);
 
-        int ssl_client_fd = waitForClient(server_fd);
+        int ssl_client_fd = waitForClient(https_fd);
         spawnClientThread(ssl_client_fd, sslCtx);
     }
 
-    close(server_fd);
+    SSL_CTX_free(sslCtx);
+    close(http_fd);
+    close(https_fd);
     return 0;
 }

@@ -25,10 +25,11 @@ int createTcpSocket()
     return server_fd;
 }
 
-void bindSocket(int fd, uint16_t port = cfg.port)
+void bindSocket(int fd, uint16_t port)
 {
     // bind to port 8080 on any interface
     sockaddr_in addr{}; // Declare and zero-initialize the IPv4 address structure
+    addr.sin_len = sizeof(addr);
     addr.sin_family = AF_INET;
     addr.sin_port = htons(port);
     addr.sin_addr.s_addr = INADDR_ANY;

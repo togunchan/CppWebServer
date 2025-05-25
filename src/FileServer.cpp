@@ -154,3 +154,61 @@ void sendResponse(SSL *ssl, const std::string &body, const std::string &contentT
         total_sent += sent;
     }
 }
+
+void sendRaw(int fd, const std::string &data)
+{
+    const char *ptr = data.c_str();
+    ssize_t to_send = data.size();
+    ssize_t total_sent = 0;
+    while (total_sent < to_send)
+    {
+        ssize_t sent = write(fd, ptr + total_sent, to_send - total_sent);
+        if (sent < 0)
+        {
+            perror("write");
+            exit(EXIT_FAILURE);
+        }
+        total_sent += sent;
+    }
+}
+
+void sendRaw(SSL *ssl, const std::string &data)
+{
+    const char *ptr = data.c_str();
+    ssize_t to_send = data.size();
+    ssize_t total_sent = 0;
+    while (total_sent < to_send)
+    {
+        ssize_t sent = SSL_write(ssl, ptr + total_sent, to_send - total_sent);
+        if (sent < 0)
+        {
+            perror("write");
+            exit(EXIT_FAILURE);
+        }
+        total_sent += sent;
+    }
+}
+
+bool peekFile(const std::string &path, const std::string &docRoot, std::string &content, std::string &mime)
+{
+    std::string fullPath = docRoot + path;
+    log("Peeking file: " + fullPath);
+    if (path == "/")
+        fullPath += "index.html";
+
+    std::ifstream file(fullPath, std::ios::binary);
+    if (!file)
+    {
+        log("peekFile returned false");
+        return false;
+    }
+
+    content.assign(
+        (std::istreambuf_iterator<char>(file)), // iterator positioned at start of file stream
+        std::istreambuf_iterator<char>()        // end-of-stream iterator indicating EOF(end of file)
+    );
+
+    mime = getMimeType(fullPath);
+    log("peekFile function's mime value is " + mime);
+    return true;
+}

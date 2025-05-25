@@ -36,4 +36,15 @@ void sendResponse(int fd, const std::string &body, const std::string &contentTyp
 
 void sendResponse(SSL *ssl, const std::string &body, const std::string &contentType);
 
+/*
+ * Write the entire contents of `data` to the socket `fd`.
+ * Loops on write() until all bytes are sent or an error occurs.
+ */
+void sendRaw(int fd, const std::string &data);
+
+void sendRaw(SSL *ssl, const std::string &data);
+
+// return (found, content, mime)
+bool peekFile(const std::string &path, const std::string &docRoot, std::string &content, std::string &mime);
+
 #endif // FILESERVER_HPP
