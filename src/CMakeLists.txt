@@ -33,13 +33,15 @@ add_library(SSLManager STATIC
     SSLManager.cpp
 )
 
+add_library(HttpResponse STATIC
+    HttpResponse.cpp
+)
+
 target_link_libraries(SSLManager
     PUBLIC
         OpenSSL::SSL
         OpenSSL::Crypto
 )
-
-
 
 # 8. Create the main executable
 add_executable(CppWebServer
@@ -56,5 +58,6 @@ target_link_libraries(CppWebServer
         ConnectionManager
         Config
         SSLManager
+        HttpResponse
         pthread      # Required for std::thread
 )

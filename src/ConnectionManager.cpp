@@ -4,54 +4,92 @@
 #include "../include/FileServer.hpp"
 #include <thread>   // for std::thread
 #include <unistd.h> // for close()
+#include "../include/HttpResponse.hpp"
 
 void handleClient(int client_fd, const std::string docRoot)
 {
-    // curl -i http://localhost:8080/foo
-    HttpRequest req = receiveRequest(client_fd);
-    log("Method: " + req.method);
-    log("Path: " + req.path);
-    log("Version: " + req.version);
-    for (const auto &[name, value] : req.headers)
+    try
     {
-        log(name + ": " + value);
-    }
-    if (req.method == "OPTIONS")
-    {
-        // curl -X OPTIONS -i http://localhost:8080/index.html
-        std::ostringstream resp;
-        resp << "HTTP/1.1 204 No Content\r\n"
-             << "Allow: GET, HEAD, OPTIONS\r\n"
-             << "Connection: close \r\n\r\n";
-        sendRaw(client_fd, resp.str());
-        close(client_fd);
-        return;
-    }
-    if (req.method == "HEAD")
-    {
-        // curl -I http://localhost:8080/index.html
-        std::string dummy, mime;
-        bool found = peekFile(req.path, docRoot, dummy, mime);
-        log("docRoot is " + docRoot);
-        if (!found)
+        // curl -i http://localhost:8080/foo
+        HttpRequest req;
+        try
         {
-            sendResponse(client_fd, "404", "Not Found");
+            req = receiveRequest(client_fd);
+            log("Method: " + req.method);
+            log("Path: " + req.path);
+            log("Version: " + req.version);
+            for (const auto &[name, value] : req.headers)
+            {
+                log(name + ": " + value);
+            }
         }
-        else
+        catch (const std::exception &e)
         {
-            std::ostringstream hdr;
-            hdr << "HTTP/1.1 200 OK\r\n"
-                << "Content-Type: " << mime << "\r\n"
-                << "Content-Length: " << dummy.size() << "\r\n"
-                << "Connection: close \r\n\r\n";
-            sendRaw(client_fd, hdr.str());
+            std::string body = "<html><body><h1>400 Bad Request</h1></body></html>";
+            sendErrorResponse(client_fd, 400, "Bad Request", body);
+            close(client_fd);
+            return;
         }
-        close(client_fd);
-        return;
-    }
-    serveStaticFile(client_fd, req.path, docRoot);
 
-    close(client_fd);
+        if (req.method == "OPTIONS")
+        {
+            // curl -X OPTIONS -i http://localhost:8080/index.html
+            std::ostringstream resp;
+            resp << "HTTP/1.1 204 No Content\r\n"
+                 << "Allow: GET, HEAD, OPTIONS\r\n"
+                 << "Connection: close \r\n\r\n";
+            sendRaw(client_fd, resp.str());
+            close(client_fd);
+            return;
+        }
+        if (req.method == "HEAD")
+        {
+            // curl -I http://localhost:8080/index.html
+            std::string dummy, mime;
+            bool found = peekFile(req.path, docRoot, dummy, mime);
+            log("docRoot is " + docRoot);
+            if (!found)
+            {
+                // curl -i http://localhost:8080/notexist.html
+                std::string body = "<html><body><h1>404 Not Found</h1></body></html>";
+                sendErrorResponse(client_fd, 404, "Not Found", body);
+            }
+            else
+            {
+                std::ostringstream hdr;
+                hdr << "HTTP/1.1 200 OK\r\n"
+                    << "Content-Type: " << mime << "\r\n"
+                    << "Content-Length: " << dummy.size() << "\r\n"
+                    << "Connection: close \r\n\r\n";
+                sendRaw(client_fd, hdr.str());
+            }
+
+            close(client_fd);
+            return;
+        }
+        if (req.method == "GET")
+        {
+            serveStaticFile(client_fd, req.path, docRoot);
+        }
+
+        if (req.method != "GET" && req.method != "HEAD" && req.method != "OPTIONS")
+        {
+            // curl -X POST -i http://localhost:8080/index.html
+            std::string body = "<html><body><h1>405 Method Not Allowed</h1></body></html>";
+            sendErrorResponse(client_fd, 405, "Method Not Allowed", body);
+        }
+
+        close(client_fd);
+    }
+    catch (const std::exception &e)
+    {
+        std::string body = "<html><body><h1>500 Internal Server Error</h1></body></html>";
+        sendErrorResponse(client_fd, 500, "Internal Server Error", body);
+        log(std::string("Internal error: ") + e.what());
+
+        close(client_fd);
+        return;
+    }
 }
 
 void handleClientSSL(SSL *ssl, const std::string docRoot)

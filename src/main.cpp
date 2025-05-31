@@ -61,9 +61,6 @@ int main()
     if (httpsThread.joinable())
         httpsThread.join();
 
-    std::cout << "Servers up. Press any button to exit...\n";
-    std::cin.get();
-
     SSL_CTX_free(sslCtx);
     close(http_fd);
     close(https_fd);

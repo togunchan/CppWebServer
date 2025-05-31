@@ -8,6 +8,8 @@
 #include <string>
 #include <unistd.h>
 #include <openssl/ssl.h>
+#include "../include/HttpResponse.hpp"
+#include "../include/Exception.hpp"
 
 std::string getMimeType(const std::string &path)
 {
@@ -48,7 +50,6 @@ std::string getMimeType(const std::string &path)
 void serveStaticFile(int fd, const std::string &path, const std::string &docRoot)
 {
     std::string fullPath = docRoot + path;
-    log("Serving file: " + fullPath);
     if (path == "/")
         fullPath += "index.html";
 
@@ -58,9 +59,14 @@ void serveStaticFile(int fd, const std::string &path, const std::string &docRoot
     std::ifstream file(fullPath, std::ios::binary);
     if (!file)
     {
-        sendResponse(fd, "404 Not Found\n", "text/plain");
-        log("fullPath is " + fullPath);
+        std::string body = "<html><body><h1>404 Not Found</h1></body></html>";
+        sendErrorResponse(fd, 404, "Not Found", body);
+        log("Not Found Path is " + fullPath);
         return;
+    }
+    else if (!file.is_open())
+    {
+        throw FileException("Failed to open file: " + fullPath);
     }
 
     // Read entire file into a string using input stream buffer iterators
@@ -70,6 +76,7 @@ void serveStaticFile(int fd, const std::string &path, const std::string &docRoot
     );
 
     std::string mime = getMimeType(fullPath);
+    log("Serving file: " + fullPath);
     sendResponse(fd, content, mime);
 }
 
@@ -86,6 +93,7 @@ void serveStaticFileSSL(SSL *ssl, const std::string &path, const std::string &do
     std::ifstream file(fullPath, std::ios::binary);
     if (!file)
     {
+        std::string body = "<html><body><h1>404 Not Found</h1></body></html>";
         sendResponseSSL(ssl, "404 Not Found\n", "text/plain");
         log("fullPath is " + fullPath);
         return;
