@@ -61,7 +61,7 @@ void serveStaticFile(int fd, const std::string &path, const std::string &docRoot
     {
         std::string body = "<html><body><h1>404 Not Found</h1></body></html>";
         sendErrorResponse(fd, 404, "Not Found", body);
-        log("Not Found Path is " + fullPath);
+        log("serveStaticFile: Not Found Path is " + fullPath);
         return;
     }
     else if (!file.is_open())

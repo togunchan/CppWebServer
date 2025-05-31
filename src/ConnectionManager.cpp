@@ -5,6 +5,7 @@
 #include <thread>   // for std::thread
 #include <unistd.h> // for close()
 #include "../include/HttpResponse.hpp"
+#include "../include/ContentNegotiation.hpp"
 
 void handleClient(int client_fd, const std::string docRoot)
 {
@@ -33,6 +34,7 @@ void handleClient(int client_fd, const std::string docRoot)
 
         if (req.method == "OPTIONS")
         {
+            log("if (req.method == OPTIONS ) worked");
             // curl -X OPTIONS -i http://localhost:8080/index.html
             std::ostringstream resp;
             resp << "HTTP/1.1 204 No Content\r\n"
@@ -44,6 +46,7 @@ void handleClient(int client_fd, const std::string docRoot)
         }
         if (req.method == "HEAD")
         {
+            log("if (req.method == HEAD ) worked");
             // curl -I http://localhost:8080/index.html
             std::string dummy, mime;
             bool found = peekFile(req.path, docRoot, dummy, mime);
@@ -69,6 +72,35 @@ void handleClient(int client_fd, const std::string docRoot)
         }
         if (req.method == "GET")
         {
+            log("if (req.method == GET ) worked");
+            std::string content, mime;
+            bool found = peekFile(req.path, docRoot, content, mime);
+
+            if (!found)
+            {
+                std::string body404 = "<html><body><h1>404 Not Found</h1></body></html>";
+                sendErrorResponse(client_fd, 404, "Not Found", body404);
+                close(client_fd);
+                return;
+            }
+
+            std::string acceptHeader;
+            auto it = req.headers.find("Accept");
+            if (it != req.headers.end())
+                acceptHeader = it->second;
+
+            // Check if the MIME type is acceptable
+            if (!isAcceptable(acceptHeader, mime))
+            {
+                log("if (!isAcceptable(acceptHeader, mime)) worked");
+                log("acceptHeader is " + acceptHeader);
+                log("mime is " + mime);
+                std::string body406 = "<html><body><h1>406 Not Acceptable</h1></body></html>";
+                sendErrorResponse(client_fd, 406, "Not Acceptable", body406);
+                close(client_fd);
+                return;
+            }
+            log("Entering the serveStaticFile function.");
             serveStaticFile(client_fd, req.path, docRoot);
         }
 
@@ -80,6 +112,7 @@ void handleClient(int client_fd, const std::string docRoot)
         }
 
         close(client_fd);
+        return;
     }
     catch (const std::exception &e)
     {

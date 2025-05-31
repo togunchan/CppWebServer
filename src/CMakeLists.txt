@@ -37,6 +37,10 @@ add_library(HttpResponse STATIC
     HttpResponse.cpp
 )
 
+add_library(ContentNegotiation STATIC
+    ContentNegotiation.cpp
+)
+
 target_link_libraries(SSLManager
     PUBLIC
         OpenSSL::SSL
@@ -59,5 +63,6 @@ target_link_libraries(CppWebServer
         Config
         SSLManager
         HttpResponse
+        ContentNegotiation
         pthread      # Required for std::thread
 )
